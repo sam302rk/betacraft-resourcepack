@@ -1,0 +1,49 @@
+name: Build ZIP
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Every 80 days at midnight UTC
+    - cron: "0 0 */80 * *"
+
+jobs:
+  build-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Create zip archive
+        run: |
+          zip -r repo.zip . -x '*.git*'
+
+      - name: Upload as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-zip
+          path: repo.zip
+          retention-days: 90
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest Build"
+          files: repo.zip
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: build-zip
+    steps:
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 1
