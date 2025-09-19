@@ -3,10 +3,14 @@ name: Build ZIP
 on:
   push:
     branches:
-      - main
+      - main   # run only on main
   schedule:
     # Every 80 days at midnight UTC
     - cron: "0 0 */80 * *"
+
+permissions:
+  contents: write   # required for release uploads
+  actions: write    # required for deleting artifacts/runs
 
 jobs:
   build-zip:
@@ -47,3 +51,8 @@ jobs:
           repository: ${{ github.repository }}
           retain_days: 0
           keep_minimum_runs: 1
+
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v4
+        with:
+          name: repo-zip
